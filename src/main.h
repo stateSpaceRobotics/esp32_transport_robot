@@ -23,7 +23,7 @@ void WiFi_loop(void * parameter);
 // Set ssid and password here
 const char* ssid = "NASA RMC Test Network";
 const char* password = "StateSpaceRobotics";
-const char* hostname = "transport_robot";
+const char* hostname = "transporter";
 
 // enable or disable X4 mode for encoders. Doubles interrupt frequency
 #define X4
@@ -140,6 +140,7 @@ void inline start_WiFi() {
   // Start up wifi and connect
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
+  WiFi.setHostname(hostname);
 
   // Restart until successful connect
   while (WiFi.waitForConnectResult() != WL_CONNECTED) {
@@ -508,10 +509,12 @@ void inline do_UDP() {
     if (buf[0] == '?') {
       status_server.beginPacket(status_server.remoteIP(), status_server.remotePort());
       // pwm (effort), velocity, position
+      xSemaphoreTake(velocity_mutex, portMAX_DELAY);
       status_server.printf("0,%lf,%lf,%li\n", front_left_pwm, front_left_velocity, front_left_count);
       status_server.printf("1,%lf,%lf,%li\n", front_right_pwm, front_right_velocity, front_right_count);
       status_server.printf("2,%lf,%lf,%li\n", back_right_pwm, back_right_velocity, back_right_count);
       status_server.printf("3,%lf,%lf,%li\n", back_left_pwm, back_left_velocity, back_left_count);
+      xSemaphoreGive(velocity_mutex);
       status_server.endPacket();
       status_server.flush();
     } else {

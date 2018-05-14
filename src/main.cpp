@@ -48,7 +48,16 @@ void loop() {
   start = millis();
 
   updateVel();     // Update Velocity
+  // PID compute
+  xSemaphoreTake(velocity_mutex, portMAX_DELAY);
+  front_left_PID.Compute();
+  front_right_PID.Compute();
+  back_left_PID.Compute();
+  back_right_PID.Compute();
+  xSemaphoreGive(velocity_mutex);
 
+  // PWM write
+  do_PWM();
   delay( 50 - (millis()-start) );
 }
 
@@ -74,20 +83,8 @@ void WiFi_loop(void * parameter) {
     // Handles OTA updates
     ArduinoOTA.handle();
 
-    // PID compute
-    xSemaphoreTake(velocity_mutex, portMAX_DELAY);
-    front_left_PID.Compute();
-    front_right_PID.Compute();
-    back_left_PID.Compute();
-    back_right_PID.Compute();
-    xSemaphoreGive(velocity_mutex);
-
-    // PWM write
-    do_PWM();
-
     // UDP stuff
     do_UDP();
-
 
     yield(); // yield to let the WiFi drivers do their thing
     delay( 50 - (millis()-start) );
